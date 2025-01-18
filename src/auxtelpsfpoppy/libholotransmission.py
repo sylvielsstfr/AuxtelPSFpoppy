@@ -35,14 +35,13 @@ AH = 1./NEFF      #  line spacing at optical center
 #########################
 # Hologram Recording
 #########################
-WLR = 0.639*u.microns  # recording wavelength
+WLR = 0.639*u.micron  # recording wavelength
 dR = 20.0 *u.mm        # distance between sources
 DR = dR/WLR/NEFF       # distances between sources plane and emulsion plane to have 
 
 #########################
 # Source Beam properties
 #########################
-
 C0 = 1.0  #Beam contrast
 DPSI0= 0. #Phase difference between the sources 
 
@@ -50,7 +49,6 @@ DPSI0= 0. #Phase difference between the sources
 ########################
 # Emulsion parameters
 ########################
-
 GAMMA = 6.5
 DELTAMAX = 550*u.nm
 
@@ -80,6 +78,10 @@ def convert_angle_to_mpi_ppi_interval(angle):
     new_angle = convert_angle_to_0_2pi_interval(angle)
     new_angle = np.where(new_angle > np.pi, new_angle - 2*np.pi,new_angle)
     return new_angle
+
+#################################################
+# Diffraction in beam
+##################################################
 
 def set_beam_aperture(x,radius = BEAM_RADIUS):
     """Define th transmission through the beam aperture : 1 inside, 0 outside
@@ -180,7 +182,7 @@ def InterferenceModule2(x,y,wlr=WLR,c=C0,dpsi=DPSI0):
 
     # compute real positive amplitude from contrast
     cos_beta = np.sqrt((np.sqrt(1-c**2)+1)/2.)   
-    sin_beta = np.sqrt((1-np.sqrt(1-C**2))/2.)    
+    sin_beta = np.sqrt((1-np.sqrt(1-c**2))/2.)    
     kR = 2.*np.pi/wlr
     RAM = D_AM(x,y)
     RBM = D_BM(x,y)
@@ -209,8 +211,7 @@ def InterferenceModule1D_3(x,wlr=WLR,c=C0,dpsi=0):
     cos_beta = np.sqrt((np.sqrt(1-c**2)+1)/2.)
     sin_beta = np.sqrt((1-np.sqrt(1-c**2))/2.)
     kR = 2.*np.pi/wlr
-    
-    I = (1+c*np.cos(kR*dR*x/DR -dpsi))/2.
+    I = (1.+c*np.cos( (kR*dR*x/DR).to_value() -dpsi))/2.
     return I
 
 def InterferenceModule1D_1(x,wlr=WLR,c=C0,dpsi=DPSI0):
@@ -222,7 +223,7 @@ def InterferenceModule1D_1_A(x,wlr=WLR,c=C0,dpsi=DPSI0):
     return InterferenceModule1D_1((x+dR/2),wlr=WLR,c=c,dpsi=dpsi)
 def InterferenceModule1D_2_A(x,wlr=WLR,c=C0,dpsi=DPSI0):
     return InterferenceModule1D_2((x+dR/2),wlr=wlr,c=c,dpsi=dpsi)
-def InterferenceModule1D_3_A(x,wlr=WLR,c=C0,dpsi=DPSI0)
+def InterferenceModule1D_3_A(x,wlr=WLR,c=C0,dpsi=DPSI0):
     return InterferenceModule1D_3((x+dR/2),wlr=wlr,c=c,dpsi=dpsi) 
 
 
@@ -240,11 +241,31 @@ def delta_erec(erec,deltamax,thegamma=GAMMA):
 
 
 ##################################
-# Phase
+# Holo Phase
 ##################################
-def Holo_Phase_1A(x,wl,wlr=WLR,c=C0,dpsi=DPSI0):
-    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_1_A(x,wlr,c,dpsi))
-def Holo_Phase_2A(x,wl,wlr=WLR,c=C0,dpsi=DPSI0):
-    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_2_A(x,wlr,c,dpsi))
-def Holo_Phase_3A(x,wl,wlr=WLR,c=C0,dpsi=DPSI0):
-    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_3_A(x,wlr,c,dpsi))
+def Holo_Phase_1A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
+    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_1_A(x,wlr,c,dpsi),deltamax)
+def Holo_Phase_2A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
+    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_2_A(x,wlr,c,dpsi),deltamax)
+def Holo_Phase_3A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
+    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_3_A(x,wlr,c,dpsi),deltamax)
+
+
+##################################
+# Holo Transmission
+##################################
+
+def holo_transmission_1A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
+    y = np.exp(1j*Holo_Phase_1A(x,wl,deltamax,wlr,c,dpsi))
+    ycut = np.where(np.logical_or(x<-BEAM_RADIUS,x>BEAM_RADIUS),0.,y)
+    return ycut
+
+def holo_transmission_2A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
+    y = np.exp(1j*Holo_Phase_2A(x,wl,deltamax,wlr,c,dpsi)) 
+    ycut = np.where(np.logical_or(x<-BEAM_RADIUS,x>BEAM_RADIUS),0.,y)
+    return ycut
+ 
+def holo_transmission_3A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
+    y = np.exp(1j*Holo_Phase_3A(x)) 
+    ycut = np.where(np.logical_or(x<-BEAM_RADIUS,x>BEAM_RADIUS),0.,y)
+    return ycut
