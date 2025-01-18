@@ -104,3 +104,14 @@ ignore = [
 
 [tool.coverage.run]
 omit=["src/auxtelpsfpoppy/_version.py"]
+
+[tool.setuptools.packages.find]
+where = ["src"]  # list of folders that contain the packages (["."] by default)
+include = ["auxtelpsfpoppy"]  # package names should match these glob patterns (["*"] by default)
+exclude = ["my_package.tests*"]  # exclude packages matching these glob patterns (empty by default)
+namespaces = true  # to activate scanning PEP 420 namespaces (true by default)
+#[tool.setuptools.packages.find]
+#where = ["."]
+#include = ["calculator"]
+#namespaces = true
+
