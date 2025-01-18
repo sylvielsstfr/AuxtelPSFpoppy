@@ -46,6 +46,18 @@ DR = dR/WLR/NEFF       # distances between sources plane and emulsion plane to h
 C0 = 1.0  #Beam contrast
 DPSI0= 0. #Phase difference between the sources 
 
+
+########################
+# Emulsion parameters
+########################
+
+GAMMA = 6.5
+DELTAMAX = 550*u.nm
+
+
+
+
+
 def convert_angle_to_0_2pi_interval(angle):
     """Convert the angle in any range into a an angle in 0-2pi range 
     :param angle: angle in radian
@@ -200,3 +212,39 @@ def InterferenceModule1D_3(x,wlr=WLR,c=C0,dpsi=0):
     
     I = (1+c*np.cos(kR*dR*x/DR -dpsi))/2.
     return I
+
+def InterferenceModule1D_1(x,wlr=WLR,c=C0,dpsi=DPSI0):
+    return InterferenceModule1(x,0.,wlr=wlr,c=c,dpsi=dpsi)
+def InterferenceModule1D_2(x,wlr=WLR,c=C0,dpsi=DPSI0):
+    return InterferenceModule2(x,0.,wlr=wlr,c=c,dpsi=dpsi)
+
+def InterferenceModule1D_1_A(x,wlr=WLR,c=C0,dpsi=DPSI0):
+    return InterferenceModule1D_1((x+dR/2),wlr=WLR,c=c,dpsi=dpsi)
+def InterferenceModule1D_2_A(x,wlr=WLR,c=C0,dpsi=DPSI0):
+    return InterferenceModule1D_2((x+dR/2),wlr=wlr,c=c,dpsi=dpsi)
+def InterferenceModule1D_3_A(x,wlr=WLR,c=C0,dpsi=DPSI0)
+    return InterferenceModule1D_3((x+dR/2),wlr=wlr,c=c,dpsi=dpsi) 
+
+
+def delta_erec(erec,deltamax,thegamma=GAMMA):
+    """Effective Optical path length
+    :param erec: Fraaction of energy deposit from 0 to a number say 5, 10
+    :type erec: float
+    :param deltamax: optical depth (depending on wavelength)
+    :type deltamax:float
+    :param thegamma: _description_, defaults to GAMMA
+    :type thegamma: float, optional
+    """
+    delta_erec =  deltamax/(1+np.exp(-thegamma*(erec-1)))
+    return delta_erec
+
+
+##################################
+# Phase
+##################################
+def Holo_Phase_1A(x,wl,wlr=WLR,c=C0,dpsi=DPSI0):
+    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_1_A(x,wlr,c,dpsi))
+def Holo_Phase_2A(x,wl,wlr=WLR,c=C0,dpsi=DPSI0):
+    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_2_A(x,wlr,c,dpsi))
+def Holo_Phase_3A(x,wl,wlr=WLR,c=C0,dpsi=DPSI0):
+    return 2.*np.pi/wl*delta_erec(InterferenceModule1D_3_A(x,wlr,c,dpsi))
