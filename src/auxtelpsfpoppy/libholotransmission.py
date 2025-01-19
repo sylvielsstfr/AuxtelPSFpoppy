@@ -4,6 +4,10 @@
 import numpy as np
 import astropy.units as u
 from scipy.integrate import quad
+import os
+
+this_dir, this_filename = os.path.split(__file__)
+DATA_PATH = os.path.join(this_dir, "data")
 
 #######################
 #Auxtel Configuration
@@ -54,7 +58,10 @@ DELTAMAX = 550*u.nm
 
 
 
-
+def get_data_path():
+    """return data path
+    """
+    return DATA_PATH
 
 def convert_angle_to_0_2pi_interval(angle):
     """Convert the angle in any range into a an angle in 0-2pi range 
@@ -266,6 +273,73 @@ def holo_transmission_2A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
     return ycut
  
 def holo_transmission_3A(x,wl,deltamax,wlr=WLR,c=C0,dpsi=DPSI0):
-    y = np.exp(1j*Holo_Phase_3A(x)) 
+    y = np.exp(1j*Holo_Phase_3A(x,wl,deltamax,wlr,c,dpsi)) 
     ycut = np.where(np.logical_or(x<-BEAM_RADIUS,x>BEAM_RADIUS),0.,y)
     return ycut
+
+
+
+#####################################
+# Deltamax vs lambda
+# From digitized plot here : https://plotdigitizer.com/app
+######################################
+
+def indexmodulationvslambda(wl,Z = np.array([ 1.11813105e+09, -3.80887867e+06,  1.02558810e+04, -4.05052174e+00,
+        9.89018007e-02])):
+    """return deltamax vs lambda
+
+    :param wl: wavelength in astropy length units
+    :type wl: float or array
+    """
+    #Z = np.array([ 1.11813105e+09, -3.80887867e+06,  1.02558810e+04, -4.05052174e+00,
+    #    9.89018007e-02])
+
+    indexmod  = Z[4] + Z[3]*u.nm/wl + Z[2]*(u.nm)**2/wl**2 + Z[1]*(u.nm)**3/wl**3 + Z[0]*(u.nm)**4/wl**4
+    return indexmod
+
+
+
+
+def deltamaxvslambda(wl,Z = np.array([ 9.50123454e+12, -4.39834684e+10,  1.10751635e+08, -8.05697911e+04,
+        5.16109943e+02])):
+    """_summary_
+
+    :param wl: wavelength in astropy length units
+    :type wl: float or array of float
+    :param Z: coefficients from polynomial fit, defaults to array([ 9.50123454e+12, -4.39834684e+10,  1.10751635e+08, -8.05697911e+04, 5.16109943e+02]
+    :type Z: array of floats, optional
+    """
+
+    deltamax  = Z[4] + Z[3]*u.nm/wl + Z[2]*(u.nm)**2/wl**2 + Z[1]*(u.nm)**3/wl**3 + Z[0]*(u.nm)**4/wl**4
+    return  deltamax*u.nm
+
+
+##################################
+# FFT
+##################################
+def ComputeFFT(r,dxe):
+    """Compute the DFT
+     
+    :param r: transmission array
+    :type r: 1D complex array type
+    :param dxe: x- sampling (prefer in mm)
+    :type dxe: float
+    :return: FFT results in term of frequency, real, imag, module and phase
+    :rtype: freq,real,imag,module,phase _: 5 real arrays
+    """
+    
+    sp = np.fft.fft(r)
+    # the frequency in units of mm^-1
+    # do a deep copy
+    freq = np.array(np.fft.fftfreq(r.shape[-1], d=dxe))
+    real = np.array(sp.real)
+    imag = np.array(sp.imag)
+    module = np.array(np.abs(sp))
+    phase = np.array(np.angle(sp))
+    
+    freq = np.fft.fftshift(freq)
+    real = np.fft.fftshift(real)
+    imag = np.fft.fftshift(imag)
+    module = np.fft.fftshift(module)
+    phase = np.fft.fftshift(phase)
+    return freq,real,imag,module,phase

@@ -17,6 +17,13 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "astropy",
+    "poppy",
+    "matplotlib",
+    "seaborn",
 ]
 
 [project.urls]
@@ -110,8 +117,7 @@ where = ["src"]  # list of folders that contain the packages (["."] by default)
 include = ["auxtelpsfpoppy"]  # package names should match these glob patterns (["*"] by default)
 exclude = ["my_package.tests*"]  # exclude packages matching these glob patterns (empty by default)
 namespaces = true  # to activate scanning PEP 420 namespaces (true by default)
-#[tool.setuptools.packages.find]
-#where = ["."]
-#include = ["calculator"]
-#namespaces = true
 
+
+[tool.setuptools.package-data]
+mypkg = ["*.csv", "*.json","*.txt"]
